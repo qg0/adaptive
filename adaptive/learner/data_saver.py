@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from collections import OrderedDict
+import inspect
 
 class DataSaver:
     """Save extra data associated with the values that need to be learned.
@@ -27,15 +28,11 @@ class DataSaver:
         self.function = learner.function
         self.arg_picker = arg_picker
 
-        # The methods a subclass of the BaseLearner needs to implement
-        self.ask = self.learner.ask
-        self.loss = self.learner.loss
-        self.remove_unfinished = self.learner.remove_unfinished
-
-        # Methods that the BaseLearner implements
-        self.tell = self.learner.tell
-        self.__getstate__ = self.learner.__getstate__
-        self.__setstate__ = self.learner.__setstate__
+        for name in dir(self.learner):
+            attr = getattr(self.learner, name)
+            forbidden = ['_tell', '__init__']
+            if name not in forbidden and inspect.ismethod(attr):
+                setattr(self, name, attr)
 
     def _tell(self, x, result):
         y = self.arg_picker(result) if result is not None else None
