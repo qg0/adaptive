@@ -27,12 +27,22 @@ class DataSaver:
         self.extra_data = OrderedDict()
         self.function = learner.function
         self.arg_picker = arg_picker
+        
+        forbidden = ['_tell', '__init__']
 
-        for name in dir(self.learner):
+        methods = inspect.getmembers(type(self.learner), inspect.isfunction)
+        for name, func in methods:
             attr = getattr(self.learner, name)
-            forbidden = ['_tell', '__init__']
-            if name not in forbidden and inspect.ismethod(attr):
+            if name not in forbidden:
                 setattr(self, name, attr)
+
+        properties = inspect.getmembers(type(self.learner),
+            lambda o: isinstance(o, property))
+        for name, func in properties:
+            if name not in forbidden:
+                prop = property(lambda self: getattr(
+                    type(self.learner), name).fget(self.learner))
+                setattr(type(self), name, prop)
 
     def _tell(self, x, result):
         y = self.arg_picker(result) if result is not None else None
